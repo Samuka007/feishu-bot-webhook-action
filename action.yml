@@ -1,9 +1,6 @@
 name: 'Github Events To Feishu Bot Action'
 description: 'send message to feishu bot'
-author: 'junka'
-branding:
-  icon: 'cloud-snow'
-  color: 'blue'
+author: 'junka + Samuka007'
 inputs:
   webhook:
     description: 'feishu bot webhook url'

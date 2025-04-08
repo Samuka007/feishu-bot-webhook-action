@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import { context } from '@actions/github'
 import getTrending from './trend'
 import { sign_with_timestamp, PostToFeishu } from './feishu'
-import { BuildGithubTrendingCard, BuildGithubNotificationCard } from './card'
+import { BuildGithubTrendingCard } from './card'
 
 async function PostGithubTrending(
   webhookId: string,
@@ -75,13 +75,14 @@ export async function PostGithubEvent(): Promise<number | undefined> {
       break
     case 'issue_comment': {
       const comment = context.payload.comment
-      etitle = `[No.${context.payload.issue?.number} ${context.payload.issue?.title}](${context.payload.issue?.html_url})\n\n${comment?.body}\n\n`
+      etitle = `No.${context.payload.issue?.number} ${context.payload.issue?.title}\n\n${comment?.body}\n`
       detailurl = comment?.html_url || ''
       break
     }
-    case 'issue': {
+    case 'issue':
+    case 'issues': {
       const issue = context.payload.issue
-      etitle = `[No.${issue?.number} ${issue?.title}](${issue?.html_url})\n\n${issue?.body}\n\n`
+      etitle = `No.${issue?.number} ${issue?.title}\n\n${issue?.body}\n`
       detailurl = issue?.html_url || ''
       break
     }
@@ -124,7 +125,7 @@ export async function PostGithubEvent(): Promise<number | undefined> {
                 context.payload['ref'].indexOf('refs/heads/') + 11
               )}`
             : ''
-      etitle = `${ptext}\n\nCommits: [${head_commit['id']}](${head_commit['url']})\n\n${head_commit['message']}`
+      etitle = `${ptext}\nCommits: ${head_commit['id']}\n\n${head_commit['message']}`
       status =
         context.payload['created'] === true
           ? 'created'
@@ -166,17 +167,17 @@ export async function PostGithubEvent(): Promise<number | undefined> {
       break
   }
 
-  const color = 'blue'
-  const cardmsg = BuildGithubNotificationCard(
-    tm,
+  const text = `${repo}: ${eventType} ${status}
+${etitle}
+Triggered by ${actor}
+${detailurl}
+`
+  const ncard = {
+    timestamp: `${tm}`,
     sign,
-    repo,
-    eventType,
-    color,
-    actor,
-    status,
-    etitle,
-    detailurl
-  )
+    msg_type: 'text',
+    content: { text }
+  }
+  const cardmsg = JSON.stringify(ncard)
   return PostToFeishu(webhookId, cardmsg)
 }
